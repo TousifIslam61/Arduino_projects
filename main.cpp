@@ -1,32 +1,31 @@
 #include <Servo.h>
 
-Servo myServo;
-const int triggerPin = 9;     
-const int echoPin = 10;       
-const int thresholdDistance = 20; 
-const int transistorPin = 8;   
-int servoAngle = 0;            
+Servo servo;
+const int triggerPin = 9;        
+const int echoPin = 10;          
+const int DetectiondDistance = 20;     
+const int ledPin = 6;          
+int servoAngle = 0;             
+
 void setup() {
   Serial.begin(9600);
-  myServo.attach(3);           
-  pinMode(triggerPin, OUTPUT); 
-  pinMode(echoPin, INPUT);     
-  pinMode(transistorPin, OUTPUT); 
-  
-  digitalWrite(transistorPin, LOW);
+  servo.attach(3);             
+  pinMode(triggerPin, OUTPUT);   
+  pinMode(echoPin, INPUT);       
+  pinMode(ledPin, OUTPUT);       
+ 
+
 }
 
 void loop() {
-  
   for (servoAngle = 0; servoAngle <= 180; servoAngle += 2) {
-    myServo.write(servoAngle);   
+    servo.write(servoAngle);   
     delay(30);                   
-    checkDistance();             
+    checkDistance();            
   }
 
-  // Move the servo from 180 to 0 degrees
   for (servoAngle = 180; servoAngle >= 0; servoAngle -= 2) {
-    myServo.write(servoAngle);   
+    servo.write(servoAngle);   
     delay(30);                   
     checkDistance();            
   }
@@ -37,19 +36,21 @@ void checkDistance() {
 
   digitalWrite(triggerPin, LOW);
   delayMicroseconds(2);
-  
-
   digitalWrite(triggerPin, HIGH);
   delayMicroseconds(10);
   digitalWrite(triggerPin, LOW);
-  
 
   long duration = pulseIn(echoPin, HIGH);
   int distance = duration * 0.034 / 2;
-
-
-  if (distance <= thresholdDistance && distance > 0) {
-    digitalWrite(LED_BUILTIN, HIGH);
+  
+  
+  if (distance <= DetectiondDistance && distance > 0) {
+    Serial.print("Object detected at: ");
+    Serial.print(distance);
+    Serial.println(" cm");
+    digitalWrite(ledPin, HIGH); 
+    delay(100);                
+    digitalWrite(ledPin, LOW);
     delay(100);
-    digitalWrite(LED_BUILTIN, LOW);
+  }
 }
