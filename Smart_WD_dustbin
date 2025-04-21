@@ -1,0 +1,76 @@
+# include <Servo.h>
+Servo servo1;
+
+const int trigPin = 12;
+const int echoPin = 11;
+const int moisturePin = A0;   // Your moisture sensor pin
+
+long duration;
+int distance = 0;
+int moistureValue = 0;
+
+const int maxDryValue = 10;   // Adjust: moisture < 100 => wet, moisture >= 100 => dry
+const int Ultra_Distance = 15; // Set distance between ultrasonic and moisture sensor in cm
+
+void setup() 
+{
+  Serial.begin(9600);
+  pinMode(trigPin, OUTPUT); 
+  pinMode(echoPin, INPUT); 
+  servo1.attach(9);
+  servo1.write(90); // Servo stopped initially
+  Serial.println("Moisture Sensor    Ultrasonic    Servo Status");
+}
+
+void loop() 
+{
+  distance = 0;
+
+  // Take 2 distance readings and average
+  for (int i = 0; i < 2; i++) {
+    digitalWrite(trigPin, LOW);
+    delayMicroseconds(7);
+    digitalWrite(trigPin, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin, LOW);
+    delayMicroseconds(10);
+    duration = pulseIn(echoPin, HIGH);
+    distance += duration * 0.034 / 2;
+    delay(10);
+  }
+  distance = distance / 2;
+
+  if (distance < Ultra_Distance && distance > 1) {
+    // Object detected
+    delay(500); // Small delay
+
+    // Read moisture sensor value
+    moistureValue = analogRead(moisturePin);
+
+    Serial.print("Moisture: ");
+    Serial.print(moistureValue);
+    Serial.print("    Distance: ");
+    Serial.print(distance);
+    Serial.print(" cm");
+
+    if (moistureValue < maxDryValue) {
+      // Wet waste detected
+      Serial.println("     ==> Wet Waste Detected");
+      servo1.write(180);  // Rotate towards wet
+      delay(3000);        // Rotate for 3 seconds
+    } 
+    else {
+      // Dry waste detected
+      Serial.println("     ==> Dry Waste Detected");
+      servo1.write(0);    // Rotate towards dry
+      delay(3000);        // Rotate for 3 seconds
+    }
+
+    servo1.write(90); // Stop servo after moving
+  }
+
+  // Reset readings
+  distance = 0;
+  moistureValue = 0;
+  delay(500);
+}
