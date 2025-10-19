@@ -1,0 +1,145 @@
+// Obstacle Avoiding Robot using Ultrasonic Sensor and Servo
+// visit robotrybd.com for RoboBox and more learning kits
+
+#include <Servo.h>
+
+// Pin definitions
+#define SERVO_PIN 3
+#define ULTRASONIC_TRIG 11
+#define ULTRASONIC_ECHO 12
+#define MAX_REGULAR_MOTOR_SPEED 75
+#define MAX_MOTOR_ADJUST_SPEED 150
+#define DISTANCE_TO_CHECK 30
+
+// Right motor pins
+int enableRightMotor = 5;
+int rightMotorPin1 = 7;
+int rightMotorPin2 = 8;
+
+// Left motor pins
+int enableLeftMotor = 6;
+int leftMotorPin1 = 9;
+int leftMotorPin2 = 10;
+
+Servo myServo;
+
+// -----------------------------
+// Function to measure distance
+// -----------------------------
+long getDistance() {
+  long duration, distance;
+  digitalWrite(ULTRASONIC_TRIG, LOW);
+  delayMicroseconds(2);
+  digitalWrite(ULTRASONIC_TRIG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(ULTRASONIC_TRIG, LOW);
+
+  duration = pulseIn(ULTRASONIC_ECHO, HIGH, 30000); // 30ms timeout
+  distance = duration * 0.034 / 2; // convert to cm
+
+  if (distance == 0 || distance > 400) distance = 400;
+  return distance;
+}
+
+// -----------------------------
+// Function to control motors
+// -----------------------------
+void rotateMotor(int rightMotorSpeed, int leftMotorSpeed) {
+  // Right motor
+  if (rightMotorSpeed < 0) {
+    digitalWrite(rightMotorPin1, LOW);
+    digitalWrite(rightMotorPin2, HIGH);
+  } else {
+    digitalWrite(rightMotorPin1, HIGH);
+    digitalWrite(rightMotorPin2, LOW);
+  }
+
+  // Left motor
+  if (leftMotorSpeed < 0) {
+    digitalWrite(leftMotorPin1, LOW);
+    digitalWrite(leftMotorPin2, HIGH);
+  } else {
+    digitalWrite(leftMotorPin1, HIGH);
+    digitalWrite(leftMotorPin2, LOW);
+  }
+
+  analogWrite(enableRightMotor, abs(rightMotorSpeed));
+  analogWrite(enableLeftMotor, abs(leftMotorSpeed));
+}
+
+// -----------------------------
+// Setup function
+// -----------------------------
+void setup() {
+  // Motor pins
+  pinMode(enableRightMotor, OUTPUT);
+  pinMode(rightMotorPin1, OUTPUT);
+  pinMode(rightMotorPin2, OUTPUT);
+
+  pinMode(enableLeftMotor, OUTPUT);
+  pinMode(leftMotorPin1, OUTPUT);
+  pinMode(leftMotorPin2, OUTPUT);
+
+  // Ultrasonic sensor pins
+  pinMode(ULTRASONIC_TRIG, OUTPUT);
+  pinMode(ULTRASONIC_ECHO, INPUT);
+
+  // Servo setup
+  myServo.attach(SERVO_PIN);
+  myServo.write(90); // center position
+
+  // Stop motors at start
+  rotateMotor(0, 0);
+  delay(1000);
+}
+
+// -----------------------------
+// Main loop
+// -----------------------------
+void loop() {
+  int distance = getDistance();
+
+  if (distance > 0 && distance < DISTANCE_TO_CHECK) {
+    // Stop motors
+    rotateMotor(0, 0);
+    delay(300);
+
+    // Move backward slightly
+    rotateMotor(-MAX_MOTOR_ADJUST_SPEED, -MAX_MOTOR_ADJUST_SPEED);
+    delay(300);
+    rotateMotor(0, 0);
+    delay(300);
+
+    // Look left
+    myServo.write(180);
+    delay(500);
+    int distanceLeft = getDistance();
+
+    // Look right
+    myServo.write(0);
+    delay(500);
+    int distanceRight = getDistance();
+
+    // Center servo again
+    myServo.write(90);
+    delay(300);
+
+    // Choose direction
+    if (distanceLeft > distanceRight) {
+      // Turn left
+      rotateMotor(MAX_MOTOR_ADJUST_SPEED, -MAX_MOTOR_ADJUST_SPEED);
+      delay(400);
+    } else {
+      // Turn right
+      rotateMotor(-MAX_MOTOR_ADJUST_SPEED, MAX_MOTOR_ADJUST_SPEED);
+      delay(400);
+    }
+
+    // Stop before moving forward again
+    rotateMotor(0, 0);
+    delay(300);
+  } else {
+    // Move forward normally
+    rotateMotor(MAX_REGULAR_MOTOR_SPEED, MAX_REGULAR_MOTOR_SPEED);
+  }
+}
