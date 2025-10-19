@@ -1,5 +1,3 @@
-// Obstacle Avoiding Robot using Ultrasonic Sensor and Servo
-// visit robotrybd.com for RoboBox and more learning kits
 
 #include <Servo.h>
 
